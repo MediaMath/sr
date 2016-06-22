@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/MediaMath/sr"
@@ -27,9 +28,15 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
-		{Name: "add",
+		{
+			Name:   "add",
 			Usage:  "sr add foo-value < schema.json",
 			Action: addSchema,
+		},
+		{
+			Name:   "ls",
+			Usage:  "sr ls [subject] [version]",
+			Action: ls,
 		},
 	}
 
@@ -48,6 +55,28 @@ func getHost(ctx *cli.Context) *sr.Host {
 	}
 
 	return host
+}
+
+func ls(ctx *cli.Context) {
+
+	host := getHost(ctx)
+
+	var resp *http.Response
+	var err error
+
+	argCount := len(ctx.Args())
+	switch argCount {
+	case 0:
+		resp, err = host.ListSubjects()
+	case 1:
+		resp, err = host.ListVersions(ctx.Args()[0])
+	case 2:
+		resp, err = host.GetVersion(ctx.Args()[0], ctx.Args()[1])
+	default:
+		log.Fatal("usage sr ls [subject] [version]")
+	}
+
+	outputResponse(ctx, resp, err)
 }
 
 func addSchema(ctx *cli.Context) {
@@ -75,6 +104,10 @@ func addSchema(ctx *cli.Context) {
 	}
 
 	resp, err := host.AddSchema(subject, schema)
+	outputResponse(ctx, resp, err)
+}
+
+func outputResponse(ctx *cli.Context, resp *http.Response, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,7 +124,6 @@ func addSchema(ctx *cli.Context) {
 	}
 
 	fmt.Printf("%s\n", read)
-
 }
 
 func getStdinOrFile(ctx *cli.Context) (r io.Reader, err error) {
