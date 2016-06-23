@@ -26,9 +26,18 @@ func main() {
 			Name:  "verbose",
 			Usage: "be more wordy",
 		},
+		cli.BoolFlag{
+			Name:  "pretty",
+			Usage: "pretty print output",
+		},
 	}
 
 	app.Commands = []cli.Command{
+		{
+			Name:   "unstupid",
+			Usage:  "sr ls foo 12 | sr unstupid",
+			Action: unstupid,
+		},
 		{
 			Name:   "add",
 			Usage:  "sr add foo-value < schema.json",
@@ -57,20 +66,6 @@ func main() {
 	}
 
 	app.Run(os.Args)
-}
-
-func getHost(ctx *cli.Context) *sr.Host {
-	address := ctx.GlobalString("host")
-	if address == "" {
-		log.Fatal("host or SCHEMA_REGISTRY_URL must be provided")
-	}
-
-	host, err := sr.NewHost(address, ctx.GlobalBool("verbose"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return host
 }
 
 func schema(ctx *cli.Context) {
@@ -195,12 +190,40 @@ func add(ctx *cli.Context) {
 	output(ctx, resp, err)
 }
 
+func unstupid(ctx *cli.Context) {
+	inputFile, err := getStdinOrFile(ctx, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stupidSchema, err := ioutil.ReadAll(inputFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schema := &sr.Schema{}
+	err = json.Unmarshal(stupidSchema, schema)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	jsonObjs := make(map[string]interface{})
+	err = json.Unmarshal([]byte(schema.Schema), &jsonObjs)
+	output(ctx, jsonObjs, err)
+}
+
 func output(ctx *cli.Context, resp interface{}, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	r, err := json.Marshal(resp)
+	var r []byte
+	if ctx.GlobalBool("pretty") {
+		r, err = json.MarshalIndent(resp, "", "\t")
+	} else {
+		r, err = json.Marshal(resp)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -215,4 +238,18 @@ func getStdinOrFile(ctx *cli.Context, index int) (r io.Reader, err error) {
 	}
 
 	return
+}
+
+func getHost(ctx *cli.Context) *sr.Host {
+	address := ctx.GlobalString("host")
+	if address == "" {
+		log.Fatal("host or SCHEMA_REGISTRY_URL must be provided")
+	}
+
+	host, err := sr.NewHost(address, ctx.GlobalBool("verbose"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return host
 }
