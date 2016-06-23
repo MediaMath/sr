@@ -42,6 +42,13 @@ func (h *Host) CheckSchema(subject string, schema *Schema) (checked *CheckedSche
 	return
 }
 
+//CheckIsCompatible checks to see if a schema is compatible with a subject and version
+func (h *Host) CheckIsCompatible(subject string, version string, schema *Schema) (is *IsCompatible, err error) {
+	is = &IsCompatible{}
+	err = h.post(path.Join("compatibility", "subjects", subject, "versions", version), schema, is)
+	return
+}
+
 //GetSchema gets a schema by id
 func (h *Host) GetSchema(id int) (schema *Schema, err error) {
 	schema = &Schema{}

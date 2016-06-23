@@ -40,6 +40,11 @@ func main() {
 			Action: exists,
 		},
 		{
+			Name:   "compatible",
+			Usage:  "sr compatible foo-value 3 < schema.json",
+			Action: compatible,
+		},
+		{
 			Name:   "ls",
 			Usage:  "sr ls [subject] [version]",
 			Action: ls,
@@ -105,6 +110,35 @@ func ls(ctx *cli.Context) {
 	output(ctx, resp, err)
 }
 
+func compatible(ctx *cli.Context) {
+
+	host := getHost(ctx)
+
+	if len(ctx.Args()) < 2 {
+		log.Fatal("usage sr compatible [subject] [version] [name of file | stdin]")
+	}
+
+	subject := ctx.Args()[0]
+	version := ctx.Args()[1]
+
+	inputFile, err := getStdinOrFile(ctx, 2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schemaString, err := ioutil.ReadAll(inputFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schema := &sr.Schema{
+		Schema: string(schemaString),
+	}
+
+	resp, err := host.CheckIsCompatible(subject, version, schema)
+	output(ctx, resp, err)
+}
+
 func exists(ctx *cli.Context) {
 
 	host := getHost(ctx)
@@ -115,7 +149,7 @@ func exists(ctx *cli.Context) {
 
 	subject := ctx.Args()[0]
 
-	inputFile, err := getStdinOrFile(ctx)
+	inputFile, err := getStdinOrFile(ctx, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -143,7 +177,7 @@ func add(ctx *cli.Context) {
 
 	subject := ctx.Args()[0]
 
-	inputFile, err := getStdinOrFile(ctx)
+	inputFile, err := getStdinOrFile(ctx, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -174,10 +208,10 @@ func output(ctx *cli.Context, resp interface{}, err error) {
 	fmt.Printf("%s\n", r)
 }
 
-func getStdinOrFile(ctx *cli.Context) (r io.Reader, err error) {
+func getStdinOrFile(ctx *cli.Context, index int) (r io.Reader, err error) {
 	r = os.Stdin
-	if len(ctx.Args()) > 1 {
-		r, err = os.Open(ctx.Args()[1])
+	if len(ctx.Args()) > index {
+		r, err = os.Open(ctx.Args()[index])
 	}
 
 	return

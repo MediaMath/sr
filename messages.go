@@ -44,3 +44,8 @@ type CheckedSchema struct {
 type SchemaID struct {
 	ID int `json:"id"`
 }
+
+//IsCompatible is returned on compatibility checks
+type IsCompatible struct {
+	IsCompatible bool `json:"is_compatible"`
+}
