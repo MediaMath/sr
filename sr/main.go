@@ -32,7 +32,12 @@ func main() {
 		{
 			Name:   "add",
 			Usage:  "sr add foo-value < schema.json",
-			Action: addSchema,
+			Action: add,
+		},
+		{
+			Name:   "exists",
+			Usage:  "sr exists foo-value < schema.json",
+			Action: exists,
 		},
 		{
 			Name:   "ls",
@@ -100,7 +105,35 @@ func ls(ctx *cli.Context) {
 	output(ctx, resp, err)
 }
 
-func addSchema(ctx *cli.Context) {
+func exists(ctx *cli.Context) {
+
+	host := getHost(ctx)
+
+	if len(ctx.Args()) < 1 {
+		log.Fatal("usage sr exists [subject] [name of file | stdin]")
+	}
+
+	subject := ctx.Args()[0]
+
+	inputFile, err := getStdinOrFile(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schemaString, err := ioutil.ReadAll(inputFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schema := &sr.Schema{
+		Schema: string(schemaString),
+	}
+
+	resp, err := host.CheckSchema(subject, schema)
+	output(ctx, resp, err)
+}
+
+func add(ctx *cli.Context) {
 
 	host := getHost(ctx)
 

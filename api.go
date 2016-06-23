@@ -35,6 +35,13 @@ func (h *Host) AddSchema(subject string, schema *Schema) (id *SchemaID, err erro
 	return
 }
 
+//CheckSchema checks to see if a schema has already been registered for a subject
+func (h *Host) CheckSchema(subject string, schema *Schema) (checked *CheckedSchema, err error) {
+	checked = &CheckedSchema{}
+	err = h.post(path.Join("subjects", subject), schema, checked)
+	return
+}
+
 //GetSchema gets a schema by id
 func (h *Host) GetSchema(id int) (schema *Schema, err error) {
 	schema = &Schema{}

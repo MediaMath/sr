@@ -29,7 +29,15 @@ type Schema struct {
 type Version struct {
 	Schema  string `json:"schema"`
 	Version int    `json:"version"`
-	Name    string `json:"name"`
+	Subject string `json:"subject"`
+}
+
+//CheckedSchema is a schema plus subject, id and version information
+type CheckedSchema struct {
+	Schema  string `json:"schema"`
+	Version int    `json:"version"`
+	Subject string `json:"subject"`
+	ID      int    `json:"id"`
 }
 
 //SchemaID is returned when creating a schema
