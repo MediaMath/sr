@@ -25,6 +25,13 @@ type Schema struct {
 	Schema string `json:"schema"`
 }
 
+//Version is a schema plus subject and version information
+type Version struct {
+	Schema
+	Version int    `json:"version"`
+	Name    string `json:"name"`
+}
+
 //SchemaID is returned when creating a schema
 type SchemaID struct {
 	ID int `json:"id"`

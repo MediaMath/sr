@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/MediaMath/sr"
@@ -62,7 +61,7 @@ func ls(ctx *cli.Context) {
 
 	host := getHost(ctx)
 
-	var resp *http.Response
+	var resp interface{}
 	var err error
 
 	argCount := len(ctx.Args())
@@ -77,7 +76,7 @@ func ls(ctx *cli.Context) {
 		log.Fatal("usage sr ls [subject] [version]")
 	}
 
-	outputResponse(ctx, resp, err)
+	output(ctx, resp, err)
 }
 
 func addSchema(ctx *cli.Context) {
@@ -119,25 +118,6 @@ func output(ctx *cli.Context, resp interface{}, err error) {
 	}
 
 	fmt.Printf("%s\n", r)
-}
-
-func outputResponse(ctx *cli.Context, resp *http.Response, err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	read, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if ctx.GlobalBool("verbose") {
-		fmt.Printf("Status: %v\n", resp.Status)
-		fmt.Printf("Headers: %v\n", resp.Header)
-	}
-
-	fmt.Printf("%s\n", read)
 }
 
 func getStdinOrFile(ctx *cli.Context) (r io.Reader, err error) {

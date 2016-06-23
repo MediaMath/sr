@@ -35,31 +35,29 @@ func (h *Host) AddSchema(subject string, schema *Schema) (id *SchemaID, err erro
 }
 
 //ListSubjects shows all the subjects that are registered
-func (h *Host) ListSubjects() (*http.Response, error) {
-	return h.get("subjects")
+func (h *Host) ListSubjects() (result []string, err error) {
+	result = []string{}
+	err = h.get("subjects", &result)
+	return
 }
 
 //ListVersions shows all the versions that are registered for a subject
-func (h *Host) ListVersions(subject string) (*http.Response, error) {
-	return h.get(path.Join("subjects", subject, "versions"))
+func (h *Host) ListVersions(subject string) (result []int, err error) {
+	result = []int{}
+	err = h.get(path.Join("subjects", subject, "versions"), &result)
+	return
 }
 
 //GetVersion shows a specific version version can be 'latest' or a positive integer
-func (h *Host) GetVersion(subject string, version string) (*http.Response, error) {
-	return h.get(path.Join("subjects", subject, "versions", version))
+func (h *Host) GetVersion(subject string, version string) (result *Version, err error) {
+	result = &Version{}
+	err = h.get(path.Join("subjects", subject, "versions", version), result)
+	return
 }
 
 const contentType = "application/vnd.schemaregistry.v1+json"
 
-func (h *Host) post(path string, payload interface{}, response interface{}) error {
-	h.u.Path = path
-
-	p, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Post(h.u.String(), contentType, bytes.NewBuffer(p))
+func (h *Host) parseResponse(resp *http.Response, err error, response interface{}) error {
 	if err != nil {
 		return err
 	}
@@ -71,6 +69,7 @@ func (h *Host) post(path string, payload interface{}, response interface{}) erro
 	}
 
 	if h.verbose {
+		log.Printf("Status: %v", resp.StatusCode)
 		log.Printf("Header: %v", resp.Header)
 		log.Printf("Body: %s", b)
 	}
@@ -89,14 +88,27 @@ func (h *Host) post(path string, payload interface{}, response interface{}) erro
 	return err
 }
 
-func (h *Host) get(path string) (*http.Response, error) {
+func (h *Host) post(path string, payload interface{}, response interface{}) error {
+	h.u.Path = path
+
+	p, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(h.u.String(), contentType, bytes.NewBuffer(p))
+	return h.parseResponse(resp, err, response)
+}
+
+func (h *Host) get(path string, response interface{}) error {
 	h.u.Path = path
 	req, err := http.NewRequest("GET", h.u.String(), nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	req.Header.Add("Accept", contentType)
 
-	return http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
+	return h.parseResponse(resp, err, response)
 }
