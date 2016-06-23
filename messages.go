@@ -27,7 +27,7 @@ type Schema struct {
 
 //Version is a schema plus subject and version information
 type Version struct {
-	Schema
+	Schema  string `json:"schema"`
 	Version int    `json:"version"`
 	Name    string `json:"name"`
 }

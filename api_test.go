@@ -148,7 +148,7 @@ func TestGetVersion(t *testing.T) {
 			http.Error(w, fmt.Sprintf("Wrong path: %v", r.URL.Path), 500)
 		}
 
-		version := &Version{Version: 8, Name: "boom", Schema: Schema{Schema: "yeah"}}
+		version := &Version{Version: 8, Name: "boom", Schema: "yeah"}
 		b, err := json.Marshal(&version)
 		if err != nil {
 			t.Fatal(err)
@@ -168,7 +168,7 @@ func TestGetVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.Version != 8 || result.Name != "boom" || result.Schema.Schema != "yeah" {
+	if result.Version != 8 || result.Name != "boom" || result.Schema != "yeah" {
 		t.Errorf("Wrong results: %v", result)
 	}
 }
