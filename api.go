@@ -3,6 +3,7 @@ package sr
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -31,6 +32,27 @@ func NewHost(address string, verbose bool) (host *Host, err error) {
 func (h *Host) AddSchema(subject string, schema *Schema) (id *SchemaID, err error) {
 	id = &SchemaID{}
 	err = h.post(path.Join("subjects", subject, "versions"), schema, id)
+	return
+}
+
+//CheckSchema checks to see if a schema has already been registered for a subject
+func (h *Host) CheckSchema(subject string, schema *Schema) (checked *CheckedSchema, err error) {
+	checked = &CheckedSchema{}
+	err = h.post(path.Join("subjects", subject), schema, checked)
+	return
+}
+
+//CheckIsCompatible checks to see if a schema is compatible with a subject and version
+func (h *Host) CheckIsCompatible(subject string, version string, schema *Schema) (is *IsCompatible, err error) {
+	is = &IsCompatible{}
+	err = h.post(path.Join("compatibility", "subjects", subject, "versions", version), schema, is)
+	return
+}
+
+//GetSchema gets a schema by id
+func (h *Host) GetSchema(id int) (schema *Schema, err error) {
+	schema = &Schema{}
+	err = h.get(path.Join("schemas", "ids", fmt.Sprintf("%v", id)), schema)
 	return
 }
 

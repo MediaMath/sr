@@ -148,7 +148,7 @@ func TestGetVersion(t *testing.T) {
 			http.Error(w, fmt.Sprintf("Wrong path: %v", r.URL.Path), 500)
 		}
 
-		version := &Version{Version: 8, Name: "boom", Schema: "yeah"}
+		version := &Version{Version: 8, Subject: "boom", Schema: "yeah"}
 		b, err := json.Marshal(&version)
 		if err != nil {
 			t.Fatal(err)
@@ -168,7 +168,42 @@ func TestGetVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.Version != 8 || result.Name != "boom" || result.Schema != "yeah" {
+	if result.Version != 8 || result.Subject != "boom" || result.Schema != "yeah" {
+		t.Errorf("Wrong results: %v", result)
+	}
+}
+
+func TestGetSchema(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, fmt.Sprintf("Wrong Method: %v", r.Method), 500)
+		}
+
+		if r.URL.Path != "/schemas/ids/2281" {
+			http.Error(w, fmt.Sprintf("Wrong path: %v", r.URL.Path), 500)
+		}
+
+		schema := &Schema{Schema: "boom"}
+		b, err := json.Marshal(&schema)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w.Write(b)
+	}))
+	defer ts.Close()
+
+	host, err := NewHost(ts.URL, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := host.GetSchema(2281)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Schema != "boom" {
 		t.Errorf("Wrong results: %v", result)
 	}
 }
