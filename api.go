@@ -3,6 +3,7 @@ package sr
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -31,6 +32,13 @@ func NewHost(address string, verbose bool) (host *Host, err error) {
 func (h *Host) AddSchema(subject string, schema *Schema) (id *SchemaID, err error) {
 	id = &SchemaID{}
 	err = h.post(path.Join("subjects", subject, "versions"), schema, id)
+	return
+}
+
+//GetSchema gets a schema by id
+func (h *Host) GetSchema(id int) (schema *Schema, err error) {
+	schema = &Schema{}
+	err = h.get(path.Join("schemas", "ids", fmt.Sprintf("%v", id)), schema)
 	return
 }
 

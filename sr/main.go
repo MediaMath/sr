@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/MediaMath/sr"
 	"github.com/codegangsta/cli"
@@ -38,6 +39,11 @@ func main() {
 			Usage:  "sr ls [subject] [version]",
 			Action: ls,
 		},
+		{
+			Name:   "schema",
+			Usage:  "sr schema 7878",
+			Action: schema,
+		},
 	}
 
 	app.Run(os.Args)
@@ -55,6 +61,21 @@ func getHost(ctx *cli.Context) *sr.Host {
 	}
 
 	return host
+}
+
+func schema(ctx *cli.Context) {
+	if len(ctx.Args()) != 1 {
+		log.Fatal("sr schema ID")
+	}
+
+	id, err := strconv.Atoi(ctx.Args()[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host := getHost(ctx)
+	resp, err := host.GetSchema(id)
+	output(ctx, resp, err)
 }
 
 func ls(ctx *cli.Context) {
