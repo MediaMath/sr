@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/MediaMath/sr"
@@ -49,7 +49,7 @@ func getHost(ctx *cli.Context) *sr.Host {
 		log.Fatal("host or SCHEMA_REGISTRY_URL must be provided")
 	}
 
-	host, err := sr.NewHost(address)
+	host, err := sr.NewHost(address, ctx.GlobalBool("verbose"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func ls(ctx *cli.Context) {
 
 	host := getHost(ctx)
 
-	var resp *http.Response
+	var resp interface{}
 	var err error
 
 	argCount := len(ctx.Args())
@@ -76,7 +76,7 @@ func ls(ctx *cli.Context) {
 		log.Fatal("usage sr ls [subject] [version]")
 	}
 
-	outputResponse(ctx, resp, err)
+	output(ctx, resp, err)
 }
 
 func addSchema(ctx *cli.Context) {
@@ -104,26 +104,20 @@ func addSchema(ctx *cli.Context) {
 	}
 
 	resp, err := host.AddSchema(subject, schema)
-	outputResponse(ctx, resp, err)
+	output(ctx, resp, err)
 }
 
-func outputResponse(ctx *cli.Context, resp *http.Response, err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	read, err := ioutil.ReadAll(resp.Body)
+func output(ctx *cli.Context, resp interface{}, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if ctx.GlobalBool("verbose") {
-		fmt.Printf("Status: %v\n", resp.Status)
-		fmt.Printf("Headers: %v\n", resp.Header)
+	r, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Printf("%s\n", read)
+	fmt.Printf("%s\n", r)
 }
 
 func getStdinOrFile(ctx *cli.Context) (r io.Reader, err error) {
