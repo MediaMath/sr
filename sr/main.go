@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -49,7 +50,7 @@ func getHost(ctx *cli.Context) *sr.Host {
 		log.Fatal("host or SCHEMA_REGISTRY_URL must be provided")
 	}
 
-	host, err := sr.NewHost(address)
+	host, err := sr.NewHost(address, ctx.GlobalBool("verbose"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -104,7 +105,20 @@ func addSchema(ctx *cli.Context) {
 	}
 
 	resp, err := host.AddSchema(subject, schema)
-	outputResponse(ctx, resp, err)
+	output(ctx, resp, err)
+}
+
+func output(ctx *cli.Context, resp interface{}, err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	r, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%s\n", r)
 }
 
 func outputResponse(ctx *cli.Context, resp *http.Response, err error) {
