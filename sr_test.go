@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func tstClient() HTTPClient {
+func tstClient() HttpClient {
 	return http.DefaultClient
 }
 
@@ -23,8 +23,8 @@ func TestSchemaRegistryGetLatest(t *testing.T) {
 	toRegister := UniqueSchema()
 	subject := UniqueSubject()
 
-	_, _, err := GetLatestSchema(client, url, subject)
-	require.NotNil(t, err, "Shouldn't be able to get a schema for an unregistered subject")
+	id, schema, err := GetLatestSchema(client, url, subject)
+	require.NotNil(t, err, fmt.Sprintf("Shouldn't be able to get a schema for an unregistered subject: %v %v %v", subject, id, schema))
 
 	id1, err := Register(client, url, subject, toRegister)
 	require.Nil(t, err)
@@ -46,7 +46,7 @@ func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 
 	id1, err := Register(client, url, subject, toRegister)
 	require.NotNil(t, err)
-	assert.NotEqual(t, 0, id1)
+	assert.NotEqual(t, uint32(0), id1)
 
 	//This is a compatible change to the test Schema
 	change := Schema(fmt.Sprintf(
@@ -65,7 +65,7 @@ func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 
 	id2, err := Register(client, url, subject, change)
 	require.NotNil(t, err)
-	assert.NotEqual(t, id1, id2)
+	assert.NotEqual(t, uint32(id1), uint32(id2))
 }
 
 func TestListSubjects(t *testing.T) {
