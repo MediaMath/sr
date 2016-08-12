@@ -222,12 +222,10 @@ func get(baseURL, query string) (request *http.Request, err error) {
 	return
 }
 
-const schemaRegistryContentType = "application/vnd.schemaregistry.v1+json"
-
 func post(baseURL, query string, body interface{}) (request *http.Request, err error) {
 	var data []byte
 	if body != nil {
-		data, err = json.Marshal(data)
+		data, err = json.Marshal(body)
 		if err != nil {
 			return
 		}
@@ -241,7 +239,7 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 
 	request, err = http.NewRequest("POST", u, bytes.NewBuffer(data))
 	if request != nil {
-		request.Header.Add("Content-Type", schemaRegistryContentType)
+		request.Header.Add("Accept", schemaRegistryAccepts)
 	}
 
 	return
