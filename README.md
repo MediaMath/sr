@@ -1,4 +1,4 @@
-# sr - simple CLI wrapper around confluent schema registry api
+# sr - simple library and CLI wrapper around confluent schema registry api
 
 ```bash
 $ export SCHEMA_REGISTRY_URL=http://10.150.254.162:10078
@@ -13,3 +13,11 @@ $ sr ls bar
 $ sr ls bar 1
 ...schema that was added and version and name...
 ```
+
+```go
+func main() {
+   id, err := sr.Register(http.DefaultClient, "http://example.com", sr.Subject("foo"), sr.Schema(`{"type":"long"}`))
+}
+```
+
+
