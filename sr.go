@@ -31,6 +31,9 @@ func GetVersion(client HTTPClient, url string, subject Subject, version string) 
 	schema = EmptySchema
 
 	var req *http.Request
+	var status int
+	var body []byte
+
 	req, err = GetVersionRequest(url, subject, version)
 	if err == nil {
 
@@ -38,12 +41,16 @@ func GetVersion(client HTTPClient, url string, subject Subject, version string) 
 			ID     uint32 `json:"id"`
 			Schema Schema `json:"schema"`
 		}{}
-		err = doJSON(client, req, &schemaResponse)
+		status, body, err = doJSON(client, req, &schemaResponse)
 
 		if err == nil {
 			id = schemaResponse.ID
 			schema = schemaResponse.Schema
 		}
+	}
+
+	if err == nil && schema == EmptySchema {
+		err = fmt.Errorf("%v:%s", status, body)
 	}
 
 	return
@@ -58,7 +65,7 @@ func GetSchema(client HTTPClient, url string, id uint32) (schema Schema, err err
 	if err == nil {
 
 		schemaResponse := &SchemaJSON{}
-		err = doJSON(client, req, &schemaResponse)
+		_, _, err = doJSON(client, req, &schemaResponse)
 
 		if err == nil {
 			schema = schemaResponse.Schema
@@ -80,7 +87,7 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 			ID uint32 `json:"id"`
 		}{}
 
-		err = doJSON(client, req, idResponse)
+		_, _, err = doJSON(client, req, idResponse)
 
 		if err == nil {
 			id = idResponse.ID
@@ -104,7 +111,7 @@ func HasSchema(client HTTPClient, url string, subject Subject, schema Schema) (v
 			ID      int     `json:"id"`
 		}{}
 
-		err = doJSON(client, req, checkedSchema)
+		_, _, err = doJSON(client, req, checkedSchema)
 		if err == nil {
 			version = checkedSchema.Version
 			id = checkedSchema.ID
@@ -125,7 +132,7 @@ func IsCompatible(client HTTPClient, url string, subject Subject, version string
 			IsCompatible bool `json:"is_compatible"`
 		}{}
 
-		err = doJSON(client, req, isCompatible)
+		_, _, err = doJSON(client, req, isCompatible)
 		if err == nil {
 			is = isCompatible.IsCompatible
 		}
@@ -139,7 +146,7 @@ func ListSubjects(client HTTPClient, url string) (subjects []Subject, err error)
 	var req *http.Request
 	req, err = ListSubjectsRequest(url)
 	if err == nil {
-		err = doJSON(client, req, &subjects)
+		_, _, err = doJSON(client, req, &subjects)
 	}
 
 	return
@@ -150,7 +157,7 @@ func ListVersions(client HTTPClient, url string, subject Subject) (versions []in
 	var req *http.Request
 	req, err = ListVersionsRequest(url, subject)
 	if err == nil {
-		err = doJSON(client, req, &versions)
+		_, _, err = doJSON(client, req, &versions)
 	}
 
 	return
@@ -247,19 +254,17 @@ type HTTPClient interface {
 	Do(request *http.Request) (*http.Response, error)
 }
 
-func doJSON(restful HTTPClient, request *http.Request, response interface{}) error {
-	var res *http.Response
-	var body []byte
-
+func doJSON(restful HTTPClient, request *http.Request, response interface{}) (status int, body []byte, err error) {
 	res, err := restful.Do(request)
 	if err == nil {
 		body, err = ioutil.ReadAll(res.Body)
 		res.Body.Close()
+		status = res.StatusCode
 	}
 
 	if err == nil && response != nil {
 		err = json.Unmarshal(body, response)
 	}
 
-	return err
+	return
 }

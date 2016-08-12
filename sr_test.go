@@ -45,7 +45,7 @@ func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 	subject := UniqueSubject()
 
 	id1, err := Register(client, url, subject, toRegister)
-	require.Nil(t, err)
+	require.Nil(t, err, fmt.Sprintf("%v", err))
 	assert.NotEqual(t, uint32(0), id1)
 
 	//This is a compatible change to the test Schema
