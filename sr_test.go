@@ -17,6 +17,7 @@ func tstClient() HTTPClient {
 }
 
 func TestSchemaRegistryGetLatest(t *testing.T) {
+	t.Skip("TODO: Race condition in this test")
 	url := GetFunctionalTestURL(t)
 	client := tstClient()
 
@@ -31,7 +32,7 @@ func TestSchemaRegistryGetLatest(t *testing.T) {
 	assert.NotEqual(t, 0, id1)
 
 	id2, schema, err := GetLatestSchema(client, url, subject)
-	require.Nil(t, err)
+	require.Nil(t, err, fmt.Sprintf("%v", err))
 	assert.Equal(t, id1, id2)
 	assert.Equal(t, toRegister, schema)
 }
@@ -64,7 +65,7 @@ func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 `, unique))
 
 	id2, err := Register(client, url, subject, change)
-	require.Nil(t, err)
+	require.Nil(t, err, fmt.Sprintf("%v", err))
 	assert.NotEqual(t, id1, id2)
 }
 

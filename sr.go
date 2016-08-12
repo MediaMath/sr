@@ -79,6 +79,9 @@ func GetSchema(client HTTPClient, url string, id uint32) (schema Schema, err err
 func Register(client HTTPClient, url string, subject Subject, schema Schema) (id uint32, err error) {
 
 	var req *http.Request
+	var status int
+	var result []byte
+
 	body := &SchemaJSON{schema}
 	req, err = RegisterRequest(url, subject, body)
 	if err == nil {
@@ -87,11 +90,15 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 			ID uint32 `json:"id"`
 		}{}
 
-		_, _, err = doJSON(client, req, &idResponse)
+		status, result, err = doJSON(client, req, &idResponse)
 
 		if err == nil {
 			id = idResponse.ID
 		}
+	}
+
+	if err == nil && id == uint32(0) {
+		err = fmt.Errorf("%v:%s", status, result)
 	}
 
 	return
