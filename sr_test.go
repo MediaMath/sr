@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func tstClient() HttpClient {
+func tstClient() HTTPClient {
 	return http.DefaultClient
 }
 
@@ -45,7 +45,7 @@ func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 	subject := UniqueSubject()
 
 	id1, err := Register(client, url, subject, toRegister)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 	assert.NotEqual(t, uint32(0), id1)
 
 	//This is a compatible change to the test Schema
@@ -64,8 +64,8 @@ func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 `, unique))
 
 	id2, err := Register(client, url, subject, change)
-	require.NotNil(t, err)
-	assert.NotEqual(t, uint32(id1), uint32(id2))
+	require.Nil(t, err)
+	assert.NotEqual(t, id1, id2)
 }
 
 func TestListSubjects(t *testing.T) {
