@@ -98,7 +98,7 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 	}
 
 	if err == nil && id == uint32(0) {
-		err = fmt.Errorf("%v:%s", status, result)
+		err = fmt.Errorf("%v:%v:%s", status, req, result)
 	}
 
 	return
