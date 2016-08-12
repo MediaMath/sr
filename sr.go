@@ -87,7 +87,7 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 			ID uint32 `json:"id"`
 		}{}
 
-		_, _, err = doJSON(client, req, idResponse)
+		_, _, err = doJSON(client, req, &idResponse)
 
 		if err == nil {
 			id = idResponse.ID
@@ -111,7 +111,7 @@ func HasSchema(client HTTPClient, url string, subject Subject, schema Schema) (v
 			ID      int     `json:"id"`
 		}{}
 
-		_, _, err = doJSON(client, req, checkedSchema)
+		_, _, err = doJSON(client, req, &checkedSchema)
 		if err == nil {
 			version = checkedSchema.Version
 			id = checkedSchema.ID
@@ -132,7 +132,7 @@ func IsCompatible(client HTTPClient, url string, subject Subject, version string
 			IsCompatible bool `json:"is_compatible"`
 		}{}
 
-		_, _, err = doJSON(client, req, isCompatible)
+		_, _, err = doJSON(client, req, &isCompatible)
 		if err == nil {
 			is = isCompatible.IsCompatible
 		}

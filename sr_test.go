@@ -27,7 +27,7 @@ func TestSchemaRegistryGetLatest(t *testing.T) {
 	require.NotNil(t, err, fmt.Sprintf("Shouldn't be able to get a schema for an unregistered subject: %v %v %v", subject, id, schema))
 
 	id1, err := Register(client, url, subject, toRegister)
-	require.Nil(t, err)
+	require.Nil(t, err, fmt.Sprintf("%v", err))
 	assert.NotEqual(t, 0, id1)
 
 	id2, schema, err := GetLatestSchema(client, url, subject)
