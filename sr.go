@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -93,7 +92,6 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 		}{}
 
 		status, result, err = doJSON(client, req, &idResponse)
-		log.Printf("%s", result)
 
 		if err == nil {
 			id = idResponse.ID
@@ -234,7 +232,6 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 			return
 		}
 		reader = bytes.NewBuffer(data)
-		log.Printf("%s", data)
 	}
 
 	var u string
@@ -246,7 +243,7 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 	request, err = http.NewRequest("POST", u, reader)
 	if request != nil {
 		request.Header.Add("Accept", schemaRegistryAccepts)
-		request.Header.Add("Content-Type", "application/json")
+		request.Header.Add("Content-Type", "application/vnd.schemaregistry.v1+json")
 	}
 
 	return
