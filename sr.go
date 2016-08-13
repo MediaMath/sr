@@ -217,7 +217,7 @@ func get(baseURL, query string) (request *http.Request, err error) {
 	request, err = http.NewRequest("GET", u, nil)
 	if request != nil {
 		request.Header.Add("Accept", schemaRegistryAccepts)
-		request.Header.Add("Content-Type", "application/vnd.schemaregistry.v1+json")
+		request.Header.Add("Content-Type", "application/json")
 	}
 
 	return
