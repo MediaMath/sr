@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -82,8 +84,8 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 	var status int
 	var result []byte
 
-	body := &SchemaJSON{schema}
-	req, err = RegisterRequest(url, subject, body)
+	body := SchemaJSON{schema}
+	req, err = RegisterRequest(url, subject, &body)
 	if err == nil {
 
 		idResponse := struct {
@@ -91,6 +93,7 @@ func Register(client HTTPClient, url string, subject Subject, schema Schema) (id
 		}{}
 
 		status, result, err = doJSON(client, req, &idResponse)
+		log.Printf("%s", result)
 
 		if err == nil {
 			id = idResponse.ID
@@ -217,19 +220,21 @@ func get(baseURL, query string) (request *http.Request, err error) {
 	request, err = http.NewRequest("GET", u, nil)
 	if request != nil {
 		request.Header.Add("Accept", schemaRegistryAccepts)
-		request.Header.Add("Content-Type", "application/json")
 	}
 
 	return
 }
 
 func post(baseURL, query string, body interface{}) (request *http.Request, err error) {
-	var data []byte
+	var reader io.Reader
 	if body != nil {
+		var data []byte
 		data, err = json.Marshal(body)
 		if err != nil {
 			return
 		}
+		reader = bytes.NewBuffer(data)
+		log.Printf("%s", data)
 	}
 
 	var u string
@@ -238,9 +243,10 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 		return
 	}
 
-	request, err = http.NewRequest("POST", u, bytes.NewBuffer(data))
+	request, err = http.NewRequest("POST", u, reader)
 	if request != nil {
 		request.Header.Add("Accept", schemaRegistryAccepts)
+		request.Header.Add("Content-Type", "application/json")
 	}
 
 	return

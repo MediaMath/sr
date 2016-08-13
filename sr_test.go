@@ -3,6 +3,7 @@ package sr
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -39,6 +40,7 @@ func TestSchemaRegistryGetLatest(t *testing.T) {
 
 func TestSchemaRegistryRegisterCompatibleChange(t *testing.T) {
 	url := GetFunctionalTestURL(t)
+	log.Printf("%v", url)
 	client := tstClient()
 
 	unique := time.Now().UnixNano()
