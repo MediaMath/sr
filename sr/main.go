@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 
@@ -78,36 +79,29 @@ func schema(ctx *cli.Context) {
 		log.Fatal(err)
 	}
 
-	host := getHost(ctx)
-	resp, err := host.GetSchema(id)
-	output(ctx, resp, err)
+	address := getAddress(ctx)
+
+	out(sr.GetSchema(client(ctx), address, uint32(id)))
 }
 
 func ls(ctx *cli.Context) {
-
-	host := getHost(ctx)
-
-	var resp interface{}
-	var err error
-
+	address := getAddress(ctx)
 	argCount := len(ctx.Args())
 	switch argCount {
 	case 0:
-		resp, err = host.ListSubjects()
+		out(sr.ListSubjects(client(ctx), address))
 	case 1:
-		resp, err = host.ListVersions(ctx.Args()[0])
+		out(sr.ListVersions(client(ctx), address, sr.Subject(ctx.Args()[0])))
 	case 2:
-		resp, err = host.GetVersion(ctx.Args()[0], ctx.Args()[1])
+		id, schema, err := sr.GetVersion(client(ctx), address, sr.Subject(ctx.Args()[0]), ctx.Args()[1])
+		out(fmt.Sprintf("%v\n%v", id, schema), err)
 	default:
 		log.Fatal("usage sr ls [subject] [version]")
 	}
-
-	output(ctx, resp, err)
 }
 
 func compatible(ctx *cli.Context) {
-
-	host := getHost(ctx)
+	address := getAddress(ctx)
 
 	if len(ctx.Args()) < 2 {
 		log.Fatal("usage sr compatible [subject] [version] [name of file | stdin]")
@@ -126,17 +120,11 @@ func compatible(ctx *cli.Context) {
 		log.Fatal(err)
 	}
 
-	schema := &sr.Schema{
-		Schema: string(schemaString),
-	}
-
-	resp, err := host.CheckIsCompatible(subject, version, schema)
-	output(ctx, resp, err)
+	out(sr.IsCompatible(client(ctx), address, sr.Subject(subject), version, sr.Schema(schemaString)))
 }
 
 func exists(ctx *cli.Context) {
-
-	host := getHost(ctx)
+	address := getAddress(ctx)
 
 	if len(ctx.Args()) < 1 {
 		log.Fatal("usage sr exists [subject] [name of file | stdin]")
@@ -154,17 +142,12 @@ func exists(ctx *cli.Context) {
 		log.Fatal(err)
 	}
 
-	schema := &sr.Schema{
-		Schema: string(schemaString),
-	}
-
-	resp, err := host.CheckSchema(subject, schema)
-	output(ctx, resp, err)
+	version, id, err := sr.HasSchema(client(ctx), address, sr.Subject(subject), sr.Schema(schemaString))
+	out(fmt.Sprintf("%v %v", version, id), err)
 }
 
 func add(ctx *cli.Context) {
-
-	host := getHost(ctx)
+	address := getAddress(ctx)
 
 	if len(ctx.Args()) < 1 {
 		log.Fatal("usage sr add [subject] [name of file | stdin]")
@@ -182,12 +165,11 @@ func add(ctx *cli.Context) {
 		log.Fatal(err)
 	}
 
-	schema := &sr.Schema{
-		Schema: string(schemaString),
+	id, err := sr.Register(http.DefaultClient, address, sr.Subject(subject), sr.Schema(string(schemaString)))
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	resp, err := host.AddSchema(subject, schema)
-	output(ctx, resp, err)
+	fmt.Printf("%v", id)
 }
 
 func unstupid(ctx *cli.Context) {
@@ -201,7 +183,7 @@ func unstupid(ctx *cli.Context) {
 		log.Fatal(err)
 	}
 
-	schema := &sr.Schema{}
+	schema := &sr.SchemaJSON{}
 	err = json.Unmarshal(stupidSchema, schema)
 	if err != nil {
 		log.Fatal(err)
@@ -240,16 +222,22 @@ func getStdinOrFile(ctx *cli.Context, index int) (r io.Reader, err error) {
 	return
 }
 
-func getHost(ctx *cli.Context) *sr.Host {
+func out(r interface{}, err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(r)
+}
+
+func client(ctx *cli.Context) sr.HTTPClient {
+	return http.DefaultClient
+}
+
+func getAddress(ctx *cli.Context) string {
 	address := ctx.GlobalString("host")
 	if address == "" {
 		log.Fatal("host or SCHEMA_REGISTRY_URL must be provided")
 	}
 
-	host, err := sr.NewHost(address, ctx.GlobalBool("verbose"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return host
+	return address
 }

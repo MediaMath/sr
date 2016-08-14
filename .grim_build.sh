@@ -7,9 +7,11 @@ set -eu
 export GOPATH="$(pwd)/go"
 export PATH="$GOPATH/bin:$PATH"
 
+export SR_TEST_SCHEMA_REGISTRY=http://kafka-changes-qa.aws.infra.mediamath.com:8081
+export SR_TEST_REQUIRED=true
+
+export VERBOSITY=-v
+
 cd "./$CLONE_PATH"
 
-go get ./...
-go vet ./...
-go test -race -v ./...
-
+make test
