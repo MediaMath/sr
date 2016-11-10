@@ -258,7 +258,7 @@ func buildURL(baseURL, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	u.Path = path
+	u.Path += path
 	return u.String(), nil
 }
 
