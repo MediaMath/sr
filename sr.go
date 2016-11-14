@@ -138,13 +138,18 @@ func IsCompatible(client HTTPClient, url string, subject Subject, version string
 	var req *http.Request
 	body := &SchemaJSON{schema}
 	req, err = CheckIsCompatibleRequest(url, subject, version, body)
-	if err != nil {
-
+	if err == nil {
 		isCompatible := struct {
 			IsCompatible bool `json:"is_compatible"`
 		}{}
 
-		_, _, err = doJSON(client, req, &isCompatible)
+		var status int
+		var body []byte
+		status, body, err = doJSON(client, req, &isCompatible)
+		if status != 200 {
+			err = fmt.Errorf("Unexpected return code: %v:%s", status, body)
+		}
+
 		if err == nil {
 			is = isCompatible.IsCompatible
 		}

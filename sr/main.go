@@ -39,6 +39,11 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
+			Name:   "stupid",
+			Usage:  "sr ls foo 12 | sr stupid",
+			Action: stupid,
+		},
+		{
 			Name:   "unstupid",
 			Usage:  "sr ls foo 12 | sr unstupid",
 			Action: unstupid,
@@ -97,8 +102,8 @@ func ls(ctx *cli.Context) {
 	case 1:
 		out(sr.ListVersions(client(ctx), address, sr.Subject(ctx.Args()[0])))
 	case 2:
-		id, schema, err := sr.GetVersion(client(ctx), address, sr.Subject(ctx.Args()[0]), ctx.Args()[1])
-		out(fmt.Sprintf("%v\n%v", id, schema), err)
+		_, schema, err := sr.GetVersion(client(ctx), address, sr.Subject(ctx.Args()[0]), ctx.Args()[1])
+		out(schema, err)
 	default:
 		log.Fatal("usage sr ls [subject] [version]")
 	}
@@ -174,6 +179,29 @@ func add(ctx *cli.Context) {
 		log.Fatal(err)
 	}
 	fmt.Printf("%v", id)
+}
+
+func stupid(ctx *cli.Context) {
+	inputFile, err := getStdinOrFile(ctx, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	notStupid, err := ioutil.ReadAll(inputFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schema := string(notStupid)
+
+	stupid := &sr.SchemaJSON{Schema: sr.Schema(schema)}
+	b, err := json.Marshal(stupid)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(string(b))
+
 }
 
 func unstupid(ctx *cli.Context) {
