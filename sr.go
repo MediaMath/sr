@@ -258,12 +258,12 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 	return
 }
 
-func buildURL(baseURL, path string) (string, error) {
+func buildURL(baseURL, endpoint string) (string, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", err
 	}
-	u.Path += path
+	u.Path = path.Join(u.Path, endpoint)
 	return u.String(), nil
 }
 
@@ -282,6 +282,10 @@ func doJSON(restful HTTPClient, request *http.Request, response interface{}) (st
 
 	if err == nil && response != nil {
 		err = json.Unmarshal(body, response)
+
+		if err != nil {
+			err = fmt.Errorf("Unexpected response (%v) from %v.\n%s", status, request.URL, body)
+		}
 	}
 
 	return
