@@ -258,12 +258,12 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 	return
 }
 
-func buildURL(baseURL, path string) (string, error) {
+func buildURL(baseURL, endpoint string) (string, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", err
 	}
-	u.Path += path
+	u.Path = path.Join(u.Path, endpoint)
 	return u.String(), nil
 }
 
