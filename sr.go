@@ -282,6 +282,10 @@ func doJSON(restful HTTPClient, request *http.Request, response interface{}) (st
 
 	if err == nil && response != nil {
 		err = json.Unmarshal(body, response)
+
+		if err != nil {
+			err = fmt.Errorf("Unexpected response (%v) from %v.\n%s", status, request.URL, body)
+		}
 	}
 
 	return
