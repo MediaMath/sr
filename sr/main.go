@@ -130,7 +130,14 @@ func ls(ctx *cli.Context) {
 	argCount := len(ctx.Args())
 	switch argCount {
 	case 0:
-		out(sr.ListSubjects(client(ctx), address))
+		subjects, err := sr.ListSubjects(client(ctx), address)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, subject := range subjects {
+			fmt.Println(string(subject))
+		}
 	case 1:
 		out(sr.ListVersions(client(ctx), address, sr.Subject(ctx.Args()[0])))
 	case 2:
