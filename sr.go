@@ -26,6 +26,16 @@ type SchemaJSON struct {
 	Schema Schema `json:"schema"`
 }
 
+//ConfigGetJSON is what the schema registry returns on config get endpoints
+type ConfigGetJSON struct {
+	Compatibility string `json:"compatibilityLevel"`
+}
+
+//ConfigPutJSON is what the schema registry expects on config put endpoints
+type ConfigPutJSON struct {
+	Compatibility string `json:"compatibility"`
+}
+
 //GetLatestSchema returns the latest schema and id for a subject
 func GetLatestSchema(client HTTPClient, url string, subject Subject) (id uint32, schema Schema, err error) {
 	return GetVersion(client, url, subject, "latest")
@@ -180,6 +190,92 @@ func ListVersions(client HTTPClient, url string, subject Subject) (versions []in
 	return
 }
 
+//GetSubjectDerivedCompatibility returns the compatibility level for a subject or the default if a subject specific doesnt exist
+func GetSubjectDerivedCompatibility(client HTTPClient, url string, subject Subject) (compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	var status int
+	var req *http.Request
+	req, err = GetSubjectConfigRequest(url, subject)
+	if err == nil {
+		status, compatibility, err = compatibilityJSON(client, req)
+	}
+
+	if err == nil && status == http.StatusNotFound {
+		compatibility, err = GetDefaultCompatibility(client, url)
+	}
+
+	return
+}
+
+//SetSubjectCompatibility sets the compatibility level for a subject
+func SetSubjectCompatibility(client HTTPClient, url string, subject Subject, compatibility Compatibility) (result Compatibility, err error) {
+	result = Zero
+
+	var (
+		req          *http.Request
+		responseBody []byte
+		status       int
+
+		body     = &ConfigPutJSON{Compatibility: string(compatibility)}
+		response = &ConfigPutJSON{}
+	)
+
+	req, err = PutSubjectConfigRequest(url, subject, body)
+	if err == nil {
+		status, responseBody, err = doJSON(client, req, response)
+	}
+
+	if err == nil && status != http.StatusOK {
+		err = fmt.Errorf("Unknown response (%v) (%s)", status, responseBody)
+	}
+
+	if err == nil {
+		result = Compatibility(response.Compatibility)
+	}
+
+	return
+}
+
+//GetSubjectCompatibility returns the compatibility level for a subject
+func GetSubjectCompatibility(client HTTPClient, url string, subject Subject) (compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	var req *http.Request
+	req, err = GetSubjectConfigRequest(url, subject)
+	if err == nil {
+		_, compatibility, err = compatibilityJSON(client, req)
+	}
+
+	return
+}
+
+//GetDefaultCompatibility returns the compatibility level set at the server level
+func GetDefaultCompatibility(client HTTPClient, url string) (compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	var req *http.Request
+	req, err = GetConfigRequest(url)
+	if err == nil {
+		_, compatibility, err = compatibilityJSON(client, req)
+	}
+
+	return
+}
+
+func compatibilityJSON(client HTTPClient, req *http.Request) (status int, compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	configResponse := &ConfigGetJSON{}
+	status, _, err = doJSON(client, req, &configResponse)
+
+	if err == nil {
+		compatibility = Compatibility(configResponse.Compatibility)
+	}
+
+	return
+}
+
 //GetSchemaRequest returns the http.Request for GET /schemas/ids/<id> route
 func GetSchemaRequest(baseURL string, id uint32) (*http.Request, error) {
 	return get(baseURL, path.Join("schemas", "ids", fmt.Sprintf("%v", id)))
@@ -215,6 +311,21 @@ func ListVersionsRequest(baseURL string, subject Subject) (*http.Request, error)
 	return get(baseURL, path.Join("subjects", string(subject), "versions"))
 }
 
+//GetConfigRequest returns the http.Request for the GET /config route
+func GetConfigRequest(baseURL string) (*http.Request, error) {
+	return get(baseURL, "config")
+}
+
+//GetSubjectConfigRequest returns the http.Request for the GET /config route
+func GetSubjectConfigRequest(baseURL string, subject Subject) (*http.Request, error) {
+	return get(baseURL, path.Join("config", string(subject)))
+}
+
+//PutSubjectConfigRequest returns the http.Request for the Put /config/<subject> route
+func PutSubjectConfigRequest(baseURL string, subject Subject, body *ConfigPutJSON) (*http.Request, error) {
+	return put(baseURL, path.Join("config", string(subject)), body)
+}
+
 const schemaRegistryAccepts = "application/vnd.schemaregistry.v1+json,application/vnd.schemaregistry+json, application/json"
 
 func get(baseURL, query string) (request *http.Request, err error) {
@@ -232,7 +343,15 @@ func get(baseURL, query string) (request *http.Request, err error) {
 	return
 }
 
+func put(baseURL, query string, body interface{}) (request *http.Request, err error) {
+	return putOrPost(baseURL, "PUT", query, body)
+}
+
 func post(baseURL, query string, body interface{}) (request *http.Request, err error) {
+	return putOrPost(baseURL, "POST", query, body)
+}
+
+func putOrPost(baseURL, method string, query string, body interface{}) (request *http.Request, err error) {
 	var reader io.Reader
 	if body != nil {
 		var data []byte
@@ -249,7 +368,7 @@ func post(baseURL, query string, body interface{}) (request *http.Request, err e
 		return
 	}
 
-	request, err = http.NewRequest("POST", u, reader)
+	request, err = http.NewRequest(method, u, reader)
 	if request != nil {
 		request.Header.Add("Accept", schemaRegistryAccepts)
 		request.Header.Add("Content-Type", "application/vnd.schemaregistry.v1+json")

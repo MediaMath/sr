@@ -73,9 +73,41 @@ func main() {
 			Usage:  "sr schema 7878",
 			Action: schema,
 		},
+		{
+			Name:   "config",
+			Usage:  "sr config [subject]",
+			Action: config,
+		},
+		{
+			Name:   "set-config",
+			Usage:  "sr set-config foo FULL",
+			Action: setConfig,
+		},
 	}
 
 	app.Run(os.Args)
+}
+
+func setConfig(ctx *cli.Context) {
+	if len(ctx.Args()) != 2 {
+		log.Fatal("sr set-config SUBJECT LEVEL")
+	}
+
+	address := getAddress(ctx)
+	out(sr.SetSubjectCompatibility(client(ctx), address, sr.Subject(ctx.Args()[0]), sr.Compatibility(ctx.Args()[1])))
+}
+
+func config(ctx *cli.Context) {
+	address := getAddress(ctx)
+	argCount := len(ctx.Args())
+	switch argCount {
+	case 0:
+		out(sr.GetDefaultCompatibility(client(ctx), address))
+	case 1:
+		out(sr.GetSubjectDerivedCompatibility(client(ctx), address, sr.Subject(ctx.Args()[0])))
+	default:
+		log.Fatal("usage sr config [subject]")
+	}
 }
 
 func schema(ctx *cli.Context) {
