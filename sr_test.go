@@ -151,7 +151,7 @@ func TestGetVersion(t *testing.T) {
 func TestGetSubjectDerivedCompatibility(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/config" {
-			response := `{"compatibility":"FULL"}`
+			response := `{"compatibilityLevel":"FULL"}`
 			w.Write([]byte(response))
 		} else {
 			response := `{"error_code":40401,"message":"Subject not found."}`
@@ -221,7 +221,7 @@ func compatibilityServer(result Compatibility, method string, path string) *http
 			http.Error(w, fmt.Sprintf("Wrong path: %v", r.URL.Path), 500)
 		}
 
-		response := fmt.Sprintf(`{"compatibility":"%v"}`, result)
+		response := fmt.Sprintf(`{"compatibilityLevel":"%v"}`, result)
 		w.Write([]byte(response))
 	}))
 
