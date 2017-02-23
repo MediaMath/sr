@@ -78,9 +78,23 @@ func main() {
 			Usage:  "sr config [subject]",
 			Action: config,
 		},
+		{
+			Name:   "set-config",
+			Usage:  "sr set-config foo FULL",
+			Action: setConfig,
+		},
 	}
 
 	app.Run(os.Args)
+}
+
+func setConfig(ctx *cli.Context) {
+	if len(ctx.Args()) != 2 {
+		log.Fatal("sr set-config SUBJECT LEVEL")
+	}
+
+	address := getAddress(ctx)
+	out(sr.SetSubjectCompatibility(client(ctx), address, sr.Subject(ctx.Args()[0]), sr.Compatibility(ctx.Args()[1])))
 }
 
 func config(ctx *cli.Context) {
