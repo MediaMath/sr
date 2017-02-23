@@ -73,9 +73,27 @@ func main() {
 			Usage:  "sr schema 7878",
 			Action: schema,
 		},
+		{
+			Name:   "config",
+			Usage:  "sr config [subject]",
+			Action: config,
+		},
 	}
 
 	app.Run(os.Args)
+}
+
+func config(ctx *cli.Context) {
+	address := getAddress(ctx)
+	argCount := len(ctx.Args())
+	switch argCount {
+	case 0:
+		out(sr.GetDefaultCompatibility(client(ctx), address))
+	case 1:
+		out(sr.GetSubjectDerivedCompatibility(client(ctx), address, sr.Subject(ctx.Args()[0])))
+	default:
+		log.Fatal("usage sr config [subject]")
+	}
 }
 
 func schema(ctx *cli.Context) {

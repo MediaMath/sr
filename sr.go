@@ -180,6 +180,65 @@ func ListVersions(client HTTPClient, url string, subject Subject) (versions []in
 	return
 }
 
+//GetSubjectDerivedCompatibility returns the compatibility level set at the server level
+func GetSubjectDerivedCompatibility(client HTTPClient, url string, subject Subject) (compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	var status int
+	var req *http.Request
+	req, err = GetSubjectConfigRequest(url, subject)
+	if err == nil {
+		status, compatibility, err = compatibilityJSON(client, req)
+	}
+
+	if err == nil && status == http.StatusNotFound {
+		compatibility, err = GetDefaultCompatibility(client, url)
+	}
+
+	return
+}
+
+//GetSubjectCompatibility returns the compatibility level set at the server level
+func GetSubjectCompatibility(client HTTPClient, url string, subject Subject) (compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	var req *http.Request
+	req, err = GetSubjectConfigRequest(url, subject)
+	if err == nil {
+		_, compatibility, err = compatibilityJSON(client, req)
+	}
+
+	return
+}
+
+//GetDefaultCompatibility returns the compatibility level set at the server level
+func GetDefaultCompatibility(client HTTPClient, url string) (compatibility Compatibility, err error) {
+	compatibility = Zero
+
+	var req *http.Request
+	req, err = GetConfigRequest(url)
+	if err == nil {
+		_, compatibility, err = compatibilityJSON(client, req)
+	}
+
+	return
+}
+
+func compatibilityJSON(client HTTPClient, req *http.Request) (status int, compatibility Compatibility, err error) {
+	compatibility = Zero
+	configResponse := struct {
+		Compatibility string `json:"compatibilityLevel"`
+	}{}
+
+	status, _, err = doJSON(client, req, &configResponse)
+
+	if err == nil {
+		compatibility = Compatibility(configResponse.Compatibility)
+	}
+
+	return
+}
+
 //GetSchemaRequest returns the http.Request for GET /schemas/ids/<id> route
 func GetSchemaRequest(baseURL string, id uint32) (*http.Request, error) {
 	return get(baseURL, path.Join("schemas", "ids", fmt.Sprintf("%v", id)))
@@ -213,6 +272,16 @@ func ListSubjectsRequest(baseURL string) (*http.Request, error) {
 //ListVersionsRequest returns GET /subjects/<subject>/versions
 func ListVersionsRequest(baseURL string, subject Subject) (*http.Request, error) {
 	return get(baseURL, path.Join("subjects", string(subject), "versions"))
+}
+
+//GetConfigRequest returns the http.Request for the GET /config route
+func GetConfigRequest(baseURL string) (*http.Request, error) {
+	return get(baseURL, "config")
+}
+
+//GetSubjectConfigRequest returns the http.Request for the GET /config route
+func GetSubjectConfigRequest(baseURL string, subject Subject) (*http.Request, error) {
+	return get(baseURL, path.Join("config", string(subject)))
 }
 
 const schemaRegistryAccepts = "application/vnd.schemaregistry.v1+json,application/vnd.schemaregistry+json, application/json"

@@ -147,3 +147,82 @@ func TestGetVersion(t *testing.T) {
 	assert.Equal(t, uint32(19), id)
 	assert.Equal(t, Schema("yeah"), schema)
 }
+
+func TestGetSubjectDerivedCompatibility(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/config" {
+			response := `{"compatibility":"FULL"}`
+			w.Write([]byte(response))
+		} else {
+			response := `{"error_code":40401,"message":"Subject not found."}`
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(response))
+		}
+	}))
+	defer ts.Close()
+
+	compat, err := GetSubjectDerivedCompatibility(tstClient(), ts.URL, Subject("foo"))
+	require.NoError(t, err)
+	assert.Equal(t, compat, Full)
+}
+
+func TestGetSubjectCompatibility404(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := `{"error_code":40401,"message":"Subject not found."}`
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(response))
+	}))
+	defer ts.Close()
+
+	compat, err := GetSubjectCompatibility(tstClient(), ts.URL, Subject("foo"))
+	require.NoError(t, err)
+	assert.Equal(t, compat, Zero)
+}
+
+func TestGetSubjectCompatibility(t *testing.T) {
+	test := func(expected Compatibility) {
+		ts := compatibilityServer(expected, "GET", "/config/foo")
+		defer ts.Close()
+
+		compat, err := GetSubjectCompatibility(tstClient(), ts.URL, Subject("foo"))
+		require.NoError(t, err, string(expected))
+		assert.Equal(t, expected, compat, string(expected))
+	}
+
+	test(None)
+	test(Full)
+	test(Backward)
+	test(Forward)
+}
+
+func TestGetDefaultCompatibility(t *testing.T) {
+	test := func(expected Compatibility) {
+		ts := compatibilityServer(expected, "GET", "/config")
+		defer ts.Close()
+
+		compat, err := GetDefaultCompatibility(tstClient(), ts.URL)
+		require.NoError(t, err, string(expected))
+		assert.Equal(t, expected, compat, string(expected))
+	}
+
+	test(None)
+	test(Full)
+	test(Backward)
+	test(Forward)
+}
+
+func compatibilityServer(result Compatibility, method string, path string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != method {
+			http.Error(w, fmt.Sprintf("Wrong Method: %v", r.Method), 500)
+		}
+
+		if r.URL.Path != path {
+			http.Error(w, fmt.Sprintf("Wrong path: %v", r.URL.Path), 500)
+		}
+
+		response := fmt.Sprintf(`{"compatibility":"%v"}`, result)
+		w.Write([]byte(response))
+	}))
+
+}
