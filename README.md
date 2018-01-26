@@ -1,7 +1,7 @@
 # sr - simple library and CLI wrapper around confluent schema registry api
 
 ```bash
-$ export SCHEMA_REGISTRY_URL=http://10.150.254.162:10078
+$ export SCHEMA_REGISTRY_URL=http://example.com
 $ sr ls
 ["foo"]
 $ sr add bar ~/Desktop/mt_event.json
