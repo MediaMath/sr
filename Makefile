@@ -4,10 +4,16 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
+ifeq ($(CIRCLECI),true)
+  TEST_RACE=
+else
+  TEST_RACE=-race
+endif
+
 test: golint dep
 	golint ./...
 	go vet ./...
-	go test $(VERBOSITY) -race ./...
+	go test $(VERBOSITY) $(TEST_RACE) ./...
 
 golint:
 	go get github.com/golang/lint/golint
