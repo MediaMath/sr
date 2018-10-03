@@ -1,3 +1,5 @@
+# [sr](https://github.com/MediaMath/sr) &middot; [![CircleCI Status](https://circleci.com/gh/MediaMath/sr.svg?style=shield)](https://circleci.com/gh/MediaMath/sr) [![GitHub license](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/MediaMath/sr/blob/master/LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/MediaMath/sr/blob/master/CONTRIBUTING.md)
+
 # sr - simple library and CLI wrapper around confluent schema registry api
 
 ```bash
@@ -19,5 +21,3 @@ func main() {
    id, err := sr.Register(http.DefaultClient, "http://example.com", sr.Subject("foo"), sr.Schema(`{"type":"long"}`))
 }
 ```
-
-[![CircleCI](https://circleci.mediamath.com/gh/MediaMath/sr.svg?style=svg)](https://circleci.mediamath.com/gh/MediaMath/sr)
