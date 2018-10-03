@@ -20,4 +20,4 @@ func main() {
 }
 ```
 
-
+[![CircleCI](https://circleci.mediamath.com/gh/MediaMath/sr.svg?style=svg)](https://circleci.mediamath.com/gh/MediaMath/sr)
