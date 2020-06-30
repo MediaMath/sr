@@ -21,3 +21,5 @@ func main() {
    id, err := sr.Register(http.DefaultClient, "http://example.com", sr.Subject("foo"), sr.Schema(`{"type":"long"}`))
 }
 ```
+
+test pr
