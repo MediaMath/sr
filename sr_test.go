@@ -235,7 +235,9 @@ func compatibilityServer(result Compatibility, method string, path string) *http
 
 		response := fmt.Sprintf(`{"compatibilityLevel":"%v"}`, result)
 		_, err := w.Write([]byte(response))
-		http.Error(w, err.Error(), 500)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
 	}))
 
 }
