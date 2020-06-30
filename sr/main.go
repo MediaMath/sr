@@ -85,7 +85,10 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	var err = app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func setConfig(ctx *cli.Context) error {

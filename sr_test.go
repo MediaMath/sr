@@ -89,7 +89,9 @@ func TestListSubjects(t *testing.T) {
 			http.Error(w, err.Error(), 500)
 		}
 
-		w.Write(b)
+		numBytes, err := w.Write(b)
+		assert.Equal(t, 13, numBytes)
+		assert.NoError(t, err)
 	}))
 	defer ts.Close()
 
@@ -116,7 +118,9 @@ func TestListVersions(t *testing.T) {
 			http.Error(w, err.Error(), 500)
 		}
 
-		w.Write(b)
+		numBytes, err := w.Write(b)
+		assert.Equal(t, 5, numBytes)
+		assert.NoError(t, err)
 	}))
 	defer ts.Close()
 
@@ -138,7 +142,9 @@ func TestGetVersion(t *testing.T) {
 		}
 
 		version := `{"version":8, "schema": "yeah", "subject":"goo", "id":19}`
-		w.Write([]byte(version))
+		numBytes, err := w.Write([]byte(version))
+		assert.Equal(t, 57, numBytes)
+		assert.NoError(t, err)
 	}))
 	defer ts.Close()
 
@@ -152,11 +158,15 @@ func TestGetSubjectDerivedCompatibility(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/config" {
 			response := `{"compatibilityLevel":"FULL"}`
-			w.Write([]byte(response))
+			numBytes, err := w.Write([]byte(response))
+			assert.Equal(t, 29, numBytes)
+			assert.NoError(t, err)
 		} else {
 			response := `{"error_code":40401,"message":"Subject not found."}`
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte(response))
+			numBytes, err := w.Write([]byte(response))
+			assert.Equal(t, 51, numBytes)
+			assert.NoError(t, err)
 		}
 	}))
 	defer ts.Close()
@@ -170,7 +180,9 @@ func TestGetSubjectCompatibility404(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := `{"error_code":40401,"message":"Subject not found."}`
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(response))
+		numBytes, err := w.Write([]byte(response))
+		assert.Equal(t, 51, numBytes)
+		assert.NoError(t, err)
 	}))
 	defer ts.Close()
 
@@ -222,7 +234,8 @@ func compatibilityServer(result Compatibility, method string, path string) *http
 		}
 
 		response := fmt.Sprintf(`{"compatibilityLevel":"%v"}`, result)
-		w.Write([]byte(response))
+		_, err := w.Write([]byte(response))
+		http.Error(w, err.Error(), 500)
 	}))
 
 }

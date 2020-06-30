@@ -1,24 +1,8 @@
-.PHONY:	test golint dep
+lint:
+	golangci-lint run --issues-exit-code 0
 
-# Copyright 2015 MediaMath <http://www.mediamath.com>.  All rights reserved.
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file.
+test: 
+	go test -v -count 1 -race -mod vendor -parallel 10 ./...
 
-ifeq ($(CIRCLECI),true)
-  TEST_RACE=
-else
-  TEST_RACE=-race
-endif
-
-test: golint dep
-	golint ./...
-	go vet ./...
-	go test $(VERBOSITY) $(TEST_RACE) ./...
-
-golint:
-	go get github.com/golang/lint/golint
-
-dep: 
-	go get gopkg.in/stretchr/testify.v1
-	go get ./...
-
+build:
+	go build -v -mod vendor -ldflags="-s -w" ./...
