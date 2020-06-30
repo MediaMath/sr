@@ -1,10 +1,37 @@
----
 version: 2
 jobs:
   build:
-    docker:
-      - image: circleci/golang:1.11
     working_directory: /go/src/github.com/MediaMath/sr
+    docker:
+      - image: 'circleci/golang:1.14'
+    environment:
+      REPOSITORY: libs-staging-local
     steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: get golangci-lint
+          command: >-
+            curl -sSfL
+            https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
       - checkout
-      - run: make test
+      - run:
+          name: Configure artificatory for publish
+          command: >-
+            if [ "$CIRCLE_BRANCH" == "master" ]; then echo 'export
+            REPOSITORY=libs-release-local' >> $BASH_ENV; fi;
+      - run:
+          name: lint
+          command: make lint
+      - run:
+          name: test
+          command: make test
+      - run:
+          name: build
+          command: make build
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build:
+          context: mediamath
