@@ -15,29 +15,29 @@ import (
 	"strconv"
 
 	"github.com/MediaMath/sr"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "sr"
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "host",
-			EnvVar: "SCHEMA_REGISTRY_URL",
-			Usage:  "url to the schema registry",
+		&cli.StringFlag{
+			Name:    "host",
+			EnvVars: []string{"SCHEMA_REGISTRY_URL"},
+			Usage:   "url to the schema registry",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "verbose",
 			Usage: "be more wordy",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "pretty",
 			Usage: "pretty print output",
 		},
 	}
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:   "stupid",
 			Usage:  "sr ls foo 12 | sr stupid",
@@ -85,49 +85,55 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	var err = app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func setConfig(ctx *cli.Context) {
-	if len(ctx.Args()) != 2 {
+func setConfig(ctx *cli.Context) error {
+	if ctx.Args().Len() != 2 {
 		log.Fatal("sr set-config SUBJECT LEVEL")
 	}
 
 	address := getAddress(ctx)
-	out(sr.SetSubjectCompatibility(client(ctx), address, sr.Subject(ctx.Args()[0]), sr.Compatibility(ctx.Args()[1])))
+	out(sr.SetSubjectCompatibility(client(ctx), address, sr.Subject(ctx.Args().First()), sr.Compatibility(ctx.Args().Get(1))))
+	return nil
 }
 
-func config(ctx *cli.Context) {
+func config(ctx *cli.Context) error {
 	address := getAddress(ctx)
-	argCount := len(ctx.Args())
+	argCount := ctx.Args().Len()
 	switch argCount {
 	case 0:
 		out(sr.GetDefaultCompatibility(client(ctx), address))
 	case 1:
-		out(sr.GetSubjectDerivedCompatibility(client(ctx), address, sr.Subject(ctx.Args()[0])))
+		out(sr.GetSubjectDerivedCompatibility(client(ctx), address, sr.Subject(ctx.Args().First())))
 	default:
 		log.Fatal("usage sr config [subject]")
 	}
+	return nil
 }
 
-func schema(ctx *cli.Context) {
-	if len(ctx.Args()) != 1 {
+func schema(ctx *cli.Context) error {
+	if ctx.Args().Len() != 1 {
 		log.Fatal("sr schema ID")
 	}
 
-	id, err := strconv.Atoi(ctx.Args()[0])
+	id, err := strconv.Atoi(ctx.Args().First())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	address := getAddress(ctx)
 
 	out(sr.GetSchema(client(ctx), address, uint32(id)))
+	return nil
 }
 
-func ls(ctx *cli.Context) {
+func ls(ctx *cli.Context) error {
 	address := getAddress(ctx)
-	argCount := len(ctx.Args())
+	argCount := ctx.Args().Len()
 	switch argCount {
 	case 0:
 		subjects, err := sr.ListSubjects(client(ctx), address)
@@ -139,96 +145,100 @@ func ls(ctx *cli.Context) {
 			fmt.Println(string(subject))
 		}
 	case 1:
-		out(sr.ListVersions(client(ctx), address, sr.Subject(ctx.Args()[0])))
+		out(sr.ListVersions(client(ctx), address, sr.Subject(ctx.Args().First())))
 	case 2:
-		_, schema, err := sr.GetVersion(client(ctx), address, sr.Subject(ctx.Args()[0]), ctx.Args()[1])
+		_, schema, err := sr.GetVersion(client(ctx), address, sr.Subject(ctx.Args().First()), ctx.Args().Get(1))
 		out(schema, err)
 	default:
 		log.Fatal("usage sr ls [subject] [version]")
 	}
+	return nil
 }
 
-func compatible(ctx *cli.Context) {
+func compatible(ctx *cli.Context) error {
 	address := getAddress(ctx)
 
-	if len(ctx.Args()) < 2 {
+	if ctx.Args().Len() < 2 {
 		log.Fatal("usage sr compatible [subject] [version] [name of file | stdin]")
 	}
 
-	subject := ctx.Args()[0]
-	version := ctx.Args()[1]
+	subject := ctx.Args().First()
+	version := ctx.Args().Get(1)
 
 	inputFile, err := getStdinOrFile(ctx, 2)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	schemaString, err := ioutil.ReadAll(inputFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	out(sr.IsCompatible(client(ctx), address, sr.Subject(subject), version, sr.Schema(schemaString)))
+	return nil
 }
 
-func exists(ctx *cli.Context) {
+func exists(ctx *cli.Context) error {
 	address := getAddress(ctx)
 
-	if len(ctx.Args()) < 1 {
+	if ctx.Args().Len() < 1 {
 		log.Fatal("usage sr exists [subject] [name of file | stdin]")
 	}
 
-	subject := ctx.Args()[0]
+	subject := ctx.Args().First()
 
 	inputFile, err := getStdinOrFile(ctx, 1)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	schemaString, err := ioutil.ReadAll(inputFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	version, id, err := sr.HasSchema(client(ctx), address, sr.Subject(subject), sr.Schema(schemaString))
 	out(fmt.Sprintf("%v %v", version, id), err)
+	return err
 }
 
-func add(ctx *cli.Context) {
+func add(ctx *cli.Context) error {
 	address := getAddress(ctx)
 
-	if len(ctx.Args()) < 1 {
+	if ctx.Args().Len() < 1 {
 		log.Fatal("usage sr add [subject] [name of file | stdin]")
 	}
 
-	subject := ctx.Args()[0]
+	subject := ctx.Args().First()
 
 	inputFile, err := getStdinOrFile(ctx, 1)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	schemaString, err := ioutil.ReadAll(inputFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	id, err := sr.Register(http.DefaultClient, address, sr.Subject(subject), sr.Schema(string(schemaString)))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("%v", id)
+	return nil
 }
 
-func stupid(ctx *cli.Context) {
+func stupid(ctx *cli.Context) error {
 	inputFile, err := getStdinOrFile(ctx, 0)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	notStupid, err := ioutil.ReadAll(inputFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	schema := string(notStupid)
@@ -236,33 +246,35 @@ func stupid(ctx *cli.Context) {
 	stupid := &sr.SchemaJSON{Schema: sr.Schema(schema)}
 	b, err := json.Marshal(stupid)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Println(string(b))
 
+	return nil
 }
 
-func unstupid(ctx *cli.Context) {
+func unstupid(ctx *cli.Context) error {
 	inputFile, err := getStdinOrFile(ctx, 0)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	stupidSchema, err := ioutil.ReadAll(inputFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	schema := &sr.SchemaJSON{}
 	err = json.Unmarshal(stupidSchema, schema)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	jsonObjs := make(map[string]interface{})
 	err = json.Unmarshal([]byte(schema.Schema), &jsonObjs)
 	output(ctx, jsonObjs, err)
+	return err
 }
 
 func output(ctx *cli.Context, resp interface{}, err error) {
@@ -271,7 +283,7 @@ func output(ctx *cli.Context, resp interface{}, err error) {
 	}
 
 	var r []byte
-	if ctx.GlobalBool("pretty") {
+	if ctx.Bool("pretty") {
 		r, err = json.MarshalIndent(resp, "", "\t")
 	} else {
 		r, err = json.Marshal(resp)
@@ -286,8 +298,8 @@ func output(ctx *cli.Context, resp interface{}, err error) {
 
 func getStdinOrFile(ctx *cli.Context, index int) (r io.Reader, err error) {
 	r = os.Stdin
-	if len(ctx.Args()) > index {
-		r, err = os.Open(ctx.Args()[index])
+	if ctx.Args().Len() > index {
+		r, err = os.Open(ctx.Args().Get(index))
 	}
 
 	return
@@ -305,7 +317,7 @@ func client(ctx *cli.Context) sr.HTTPClient {
 }
 
 func getAddress(ctx *cli.Context) string {
-	address := ctx.GlobalString("host")
+	address := ctx.String("host")
 	if address == "" {
 		log.Fatal("host or SCHEMA_REGISTRY_URL must be provided")
 	}

@@ -1,10 +1,20 @@
----
-version: 2
+version: 2.1
 jobs:
   build:
-    docker:
-      - image: circleci/golang:1.11
     working_directory: /go/src/github.com/MediaMath/sr
+    docker:
+      - image: 'circleci/golang:1.14'
     steps:
+      - run:
+          name: get golangci-lint
+          command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
       - checkout
-      - run: make test
+      - run:
+          name: lint
+          command: make lint
+      - run:
+          name: test
+          command: make test
+      - run:
+          name: build
+          command: make build
