@@ -5,8 +5,6 @@ jobs:
     docker:
       - image: 'circleci/golang:1.14'
     steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
           name: get golangci-lint
           command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
