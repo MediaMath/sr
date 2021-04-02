@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 )
 
 //Schema is a string that represents a avro schema
@@ -408,4 +409,31 @@ func doJSON(restful HTTPClient, request *http.Request, response interface{}) (st
 	}
 
 	return
+}
+
+func Copy(client HTTPClient, fromURL, toURL, fromPrefix, toPrefix string) (int, error) {
+	var total int
+	var subjects, err = ListSubjects(client, fromURL)
+	if err != nil {
+		return total, err
+	}
+
+	for _, subject := range subjects {
+		if strings.HasPrefix(string(subject), fromPrefix) {
+			var _, schema, err = GetLatestSchema(client, fromURL, subject)
+			if err != nil {
+				return total, err
+			}
+
+			var toSubject = strings.Replace(string(subject), fromPrefix, toPrefix, 1)
+			_, err = Register(client, toURL, Subject(toSubject), schema)
+			if err != nil {
+				return total, err
+			}
+			total++
+		}
+
+	}
+
+	return total, nil
 }

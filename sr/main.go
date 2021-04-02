@@ -39,16 +39,6 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		{
-			Name:   "stupid",
-			Usage:  "sr ls foo 12 | sr stupid",
-			Action: stupid,
-		},
-		{
-			Name:   "unstupid",
-			Usage:  "sr ls foo 12 | sr unstupid",
-			Action: unstupid,
-		},
-		{
 			Name:   "add",
 			Usage:  "sr add foo-value < schema.json",
 			Action: add,
@@ -82,6 +72,11 @@ func main() {
 			Name:   "set-config",
 			Usage:  "sr set-config foo FULL",
 			Action: setConfig,
+		},
+		{
+			Name:   "copy",
+			Usage:  "sr copy from-url to-url from-prefix to-prefix",
+			Action: copyFunc,
 		},
 	}
 
@@ -230,53 +225,6 @@ func add(ctx *cli.Context) error {
 	return nil
 }
 
-func stupid(ctx *cli.Context) error {
-	inputFile, err := getStdinOrFile(ctx, 0)
-	if err != nil {
-		return err
-	}
-
-	notStupid, err := ioutil.ReadAll(inputFile)
-	if err != nil {
-		return err
-	}
-
-	schema := string(notStupid)
-
-	stupid := &sr.SchemaJSON{Schema: sr.Schema(schema)}
-	b, err := json.Marshal(stupid)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(b))
-
-	return nil
-}
-
-func unstupid(ctx *cli.Context) error {
-	inputFile, err := getStdinOrFile(ctx, 0)
-	if err != nil {
-		return err
-	}
-
-	stupidSchema, err := ioutil.ReadAll(inputFile)
-	if err != nil {
-		return err
-	}
-
-	schema := &sr.SchemaJSON{}
-	err = json.Unmarshal(stupidSchema, schema)
-	if err != nil {
-		return err
-	}
-
-	jsonObjs := make(map[string]interface{})
-	err = json.Unmarshal([]byte(schema.Schema), &jsonObjs)
-	output(ctx, jsonObjs, err)
-	return err
-}
-
 func output(ctx *cli.Context, resp interface{}, err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -323,4 +271,23 @@ func getAddress(ctx *cli.Context) string {
 	}
 
 	return address
+}
+
+func copyFunc(ctx *cli.Context) error {
+	if ctx.Args().Len() < 4 {
+		log.Fatal("usage sr copy [sr from url] [sr to url] [from prefix] [to prefix]")
+	}
+
+	var fromURL = ctx.Args().First()
+	var toURL = ctx.Args().Get(1)
+	var fromPrefix = ctx.Args().Get(2)
+	var toPrefix = ctx.Args().Get(3)
+
+	var total, err = sr.Copy(http.DefaultClient, fromURL, toURL, fromPrefix, toPrefix)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%d copied\n", total)
+	return nil
 }
