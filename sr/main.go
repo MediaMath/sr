@@ -288,6 +288,6 @@ func copyFunc(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Printf("%d copied", total)
+	fmt.Printf("%d copied\n", total)
 	return nil
 }

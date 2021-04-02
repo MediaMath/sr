@@ -424,13 +424,15 @@ func Copy(client HTTPClient, fromURL, toURL, fromPrefix, toPrefix string) (int, 
 			return total, err
 		}
 
-		var toSubject = strings.Replace(string(subject), fromPrefix, toPrefix, 1)
-		_, err = Register(client, toURL, Subject(toSubject), schema)
-		if err != nil {
-			return total, err
+		if strings.HasPrefix(string(subject), fromPrefix) {
+			var toSubject = strings.Replace(string(subject), fromPrefix, toPrefix, 1)
+			_, err = Register(client, toURL, Subject(toSubject), schema)
+			if err != nil {
+				return total, err
+			}
+			total++
 		}
 
-		total++
 	}
 
 	return total, nil
